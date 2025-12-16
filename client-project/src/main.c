@@ -197,12 +197,6 @@ void get_hostname_from_ip(struct in_addr *addr, char *hostname, size_t hostname_
 
 int parse_request_string(const char *request_str, struct request *req)
 {
-    if (contains_invalid_chars(request_str))
-    {
-        printf("Errore: la richiesta non può contenere caratteri di tabulazione\n");
-        return -1;
-    }
-
     const char *space = strchr(request_str, ' ');
     if (space == NULL)
     {
