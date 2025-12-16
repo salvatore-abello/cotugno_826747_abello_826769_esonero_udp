@@ -32,89 +32,110 @@
 
 static const char *supported_cities[NUM_CITIES] = {
     "bari", "roma", "milano", "napoli", "torino",
-    "palermo", "genova", "bologna", "firenze", "venezia"
-};
+    "palermo", "genova", "bologna", "firenze", "venezia"};
 
-void clearwinsock() {
+void clearwinsock()
+{
 #if defined WIN32
     WSACleanup();
 #endif
 }
 
-
-void to_lowercase(char *str) {
-    for (int i = 0; str[i]; i++) {
+void to_lowercase(char *str)
+{
+    for (int i = 0; str[i]; i++)
+    {
         str[i] = tolower((unsigned char)str[i]);
     }
 }
 
-void capitalize_city(char *city) {
+void capitalize_city(char *city)
+{
     int capitalize_next = 1;
-    for (int i = 0; city[i]; i++) {
-        if (city[i] == ' ') {
+    for (int i = 0; city[i]; i++)
+    {
+        if (city[i] == ' ')
+        {
             capitalize_next = 1;
-        } else if (capitalize_next) {
+        }
+        else if (capitalize_next)
+        {
             city[i] = toupper((unsigned char)city[i]);
             capitalize_next = 0;
-        } else {
+        }
+        else
+        {
             city[i] = tolower((unsigned char)city[i]);
         }
     }
 }
 
-int is_valid_request_type(char type) {
+int is_valid_request_type(char type)
+{
     return (type == REQ_TEMPERATURE || type == REQ_HUMIDITY ||
             type == REQ_WIND || type == REQ_PRESSURE);
 }
 
-int contains_invalid_chars(const char *str) {
-    for (int i = 0; str[i]; i++) {
+int contains_invalid_chars(const char *str)
+{
+    for (int i = 0; str[i]; i++)
+    {
         char c = str[i];
         // Allow letters, digits, spaces, accented characters (negative values in signed char)
-        if (c == '\t') return 1; // Tab not allowed
+        if (c == '\t')
+            return 1; // Tab not allowed
         if (c == '@' || c == '#' || c == '$' || c == '%' || c == '^' ||
             c == '&' || c == '*' || c == '(' || c == ')' || c == '!' ||
             c == '~' || c == '`' || c == '+' || c == '=' || c == '[' ||
             c == ']' || c == '{' || c == '}' || c == '|' || c == '\\' ||
             c == '<' || c == '>' || c == '?' || c == '/' || c == ';' ||
-            c == ':' || c == '"') {
+            c == ':' || c == '"')
+        {
             return 1;
         }
     }
     return 0;
 }
 
-int is_city_supported(const char *city) {
+int is_city_supported(const char *city)
+{
     char city_lower[CITY_SIZE];
     strncpy(city_lower, city, CITY_SIZE - 1);
     city_lower[CITY_SIZE - 1] = '\0';
     to_lowercase(city_lower);
 
-    for (int i = 0; i < NUM_CITIES; i++) {
-        if (strcmp(city_lower, supported_cities[i]) == 0) {
+    for (int i = 0; i < NUM_CITIES; i++)
+    {
+        if (strcmp(city_lower, supported_cities[i]) == 0)
+        {
             return 1;
         }
     }
     return 0;
 }
 
-float get_temperature() {
+float get_temperature()
+{
     return -10.0f + ((float)rand() / RAND_MAX) * 50.0f;
 }
 
-float get_humidity() {
+float get_humidity()
+{
     return 20.0f + ((float)rand() / RAND_MAX) * 80.0f;
 }
 
-float get_wind() {
+float get_wind()
+{
     return ((float)rand() / RAND_MAX) * 100.0f;
 }
 
-float get_pressure() {
+float get_pressure()
+{
     return 950.0f + ((float)rand() / RAND_MAX) * 100.0f;
 }
 
-int serialize_request(const struct request *req, char *buffer) {
+int serialize_request(const struct request *req, char *buffer)
+{
     int offset = 0;
 
     // Type (1 byte, no conversion needed)
@@ -128,7 +149,8 @@ int serialize_request(const struct request *req, char *buffer) {
     return offset;
 }
 
-int deserialize_request(const char *buffer, struct request *req) {
+int deserialize_request(const char *buffer, struct request *req)
+{
     int offset = 0;
 
     // Type (1 byte)
@@ -143,7 +165,8 @@ int deserialize_request(const char *buffer, struct request *req) {
     return offset;
 }
 
-int serialize_response(const struct response *resp, char *buffer) {
+int serialize_response(const struct response *resp, char *buffer)
+{
     int offset = 0;
 
     // Status (4 bytes with network byte order)
@@ -165,7 +188,8 @@ int serialize_response(const struct response *resp, char *buffer) {
     return offset;
 }
 
-int deserialize_response(const char *buffer, struct response *resp) {
+int deserialize_response(const char *buffer, struct response *resp)
+{
     int offset = 0;
 
     // Status (4 bytes)
@@ -188,26 +212,33 @@ int deserialize_response(const char *buffer, struct response *resp) {
     return offset;
 }
 
-void get_hostname_from_ip(struct sockaddr_in *addr, char *hostname, size_t hostname_len, char *ip_str, size_t ip_len) {
+void get_hostname_from_ip(struct sockaddr_in *addr, char *hostname, size_t hostname_len, char *ip_str, size_t ip_len)
+{
     // Get IP string
     inet_ntop(AF_INET, &(addr->sin_addr), ip_str, ip_len);
 
     // Reverse DNS lookup
     struct hostent *host = gethostbyaddr((const char *)&(addr->sin_addr), sizeof(addr->sin_addr), AF_INET);
-    if (host != NULL && host->h_name != NULL) {
+    if (host != NULL && host->h_name != NULL)
+    {
         strncpy(hostname, host->h_name, hostname_len - 1);
         hostname[hostname_len - 1] = '\0';
-    } else {
+    }
+    else
+    {
         strncpy(hostname, ip_str, hostname_len - 1);
         hostname[hostname_len - 1] = '\0';
     }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     int port = DEFAULT_PORT;
 
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
+    for (int i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-p") == 0 && i + 1 < argc)
+        {
             port = atoi(argv[++i]);
         }
     }
@@ -216,7 +247,8 @@ int main(int argc, char *argv[]) {
     // Initialize Winsock
     WSADATA wsa_data;
     int result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
-    if (result != NO_ERROR) {
+    if (result != NO_ERROR)
+    {
         printf("Error at WSAStartup()\n");
         return 1;
     }
@@ -226,7 +258,8 @@ int main(int argc, char *argv[]) {
     srand((unsigned int)time(NULL));
 
     int my_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (my_socket < 0) {
+    if (my_socket < 0)
+    {
         printf("Errore nella creazione del socket\n");
         clearwinsock();
         return 1;
@@ -240,7 +273,8 @@ int main(int argc, char *argv[]) {
     server_addr.sin_port = htons(port);
 
     // Bind socket
-    if (bind(my_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    if (bind(my_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    {
         printf("Errore nel bind del socket\n");
         closesocket(my_socket);
         clearwinsock();
@@ -249,7 +283,8 @@ int main(int argc, char *argv[]) {
 
     printf("Server UDP in ascolto sulla porta %d...\n", port);
 
-    while (1) {
+    while (1)
+    {
         char recv_buffer[BUFFER_SIZE];
         char send_buffer[BUFFER_SIZE];
         struct sockaddr_in client_addr;
@@ -258,7 +293,8 @@ int main(int argc, char *argv[]) {
         int recv_len = recvfrom(my_socket, recv_buffer, sizeof(recv_buffer), 0,
                                 (struct sockaddr *)&client_addr, &client_addr_len);
 
-        if (recv_len < 0) {
+        if (recv_len < 0)
+        {
             printf("Errore nella ricezione\n");
             continue;
         }
@@ -279,31 +315,36 @@ int main(int argc, char *argv[]) {
         resp.type = req.type;
         resp.value = 0.0f;
 
-        if (!is_valid_request_type(req.type)) {
+        if (!is_valid_request_type(req.type))
+        {
             resp.status = STATUS_INVALID_REQUEST;
         }
-        else if (contains_invalid_chars(req.city)) {
+        else if (contains_invalid_chars(req.city))
+        {
             resp.status = STATUS_INVALID_REQUEST;
         }
-        else if (!is_city_supported(req.city)) {
+        else if (!is_city_supported(req.city))
+        {
             resp.status = STATUS_CITY_NOT_FOUND;
         }
         // Generate weather data
-        else {
+        else
+        {
             resp.status = STATUS_SUCCESS;
-            switch (req.type) {
-                case REQ_TEMPERATURE:
-                    resp.value = get_temperature();
-                    break;
-                case REQ_HUMIDITY:
-                    resp.value = get_humidity();
-                    break;
-                case REQ_WIND:
-                    resp.value = get_wind();
-                    break;
-                case REQ_PRESSURE:
-                    resp.value = get_pressure();
-                    break;
+            switch (req.type)
+            {
+            case REQ_TEMPERATURE:
+                resp.value = get_temperature();
+                break;
+            case REQ_HUMIDITY:
+                resp.value = get_humidity();
+                break;
+            case REQ_WIND:
+                resp.value = get_wind();
+                break;
+            case REQ_PRESSURE:
+                resp.value = get_pressure();
+                break;
             }
         }
 
