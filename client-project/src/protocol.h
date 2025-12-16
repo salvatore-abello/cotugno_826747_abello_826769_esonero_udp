@@ -12,21 +12,6 @@
 
 /*
  * ============================================================================
- * CROSS-PLATFORM SOCKET DEFINITIONS
- * ============================================================================
- */
-
-#if defined WIN32
-    #include <winsock2.h>
-    typedef SOCKET socket_t;
-    #define INVALID_SOCKET_VALUE INVALID_SOCKET
-#else
-    typedef int socket_t;
-    #define INVALID_SOCKET_VALUE -1
-#endif
-
-/*
- * ============================================================================
  * PROTOCOL CONSTANTS
  * ============================================================================
  */

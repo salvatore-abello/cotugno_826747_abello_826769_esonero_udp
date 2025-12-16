@@ -74,20 +74,8 @@ int contains_invalid_chars(const char *str)
 {
     for (int i = 0; str[i]; i++)
     {
-        unsigned char c = (unsigned char)str[i];
-
-        // Whitelist approach: only allow letters, spaces, and accented characters (UTF-8)
-        // Allow: a-z, A-Z, space, and bytes >= 128 (UTF-8 multi-byte characters for accents)
-        if ((c >= 'a' && c <= 'z') ||
-            (c >= 'A' && c <= 'Z') ||
-            c == ' ' ||
-            c >= 128)
-        {
-            continue; // Valid character
-        }
-
-        // Any other character is invalid (including digits, punctuation, tabs, newlines, etc.)
-        return 1;
+        if (str[i] == '\t')
+            return 1; // Tab not allowed
     }
     return 0;
 }
@@ -211,7 +199,7 @@ int parse_request_string(const char *request_str, struct request *req)
 {
     if (contains_invalid_chars(request_str))
     {
-        printf("Errore: la città può contenere solo lettere, spazi e caratteri accentati\n");
+        printf("Errore: la richiesta non può contenere caratteri di tabulazione\n");
         return -1;
     }
 
@@ -357,8 +345,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    socket_t my_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (my_socket == INVALID_SOCKET_VALUE)
+    int my_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (my_socket < 0)
     {
         printf("Errore nella creazione del socket\n");
         clearwinsock();

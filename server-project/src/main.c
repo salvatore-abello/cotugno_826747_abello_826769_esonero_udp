@@ -80,20 +80,19 @@ int contains_invalid_chars(const char *str)
 {
     for (int i = 0; str[i]; i++)
     {
-        unsigned char c = (unsigned char)str[i];
-
-        // Whitelist approach: only allow letters, spaces, and accented characters (UTF-8)
-        // Allow: a-z, A-Z, space, and bytes >= 128 (UTF-8 multi-byte characters for accents)
-        if ((c >= 'a' && c <= 'z') ||
-            (c >= 'A' && c <= 'Z') ||
-            c == ' ' ||
-            c >= 128)
+        char c = str[i];
+        // Allow letters, digits, spaces, accented characters (negative values in signed char)
+        if (c == '\t')
+            return 1; // Tab not allowed
+        if (c == '@' || c == '#' || c == '$' || c == '%' || c == '^' ||
+            c == '&' || c == '*' || c == '(' || c == ')' || c == '!' ||
+            c == '~' || c == '`' || c == '+' || c == '=' || c == '[' ||
+            c == ']' || c == '{' || c == '}' || c == '|' || c == '\\' ||
+            c == '<' || c == '>' || c == '?' || c == '/' || c == ';' ||
+            c == ':' || c == '"')
         {
-            continue; // Valid character
+            return 1;
         }
-
-        // Any other character is invalid (including digits, punctuation, tabs, newlines, etc.)
-        return 1;
     }
     return 0;
 }
@@ -258,8 +257,8 @@ int main(int argc, char *argv[])
     // Seed random number generator
     srand((unsigned int)time(NULL));
 
-    socket_t my_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (my_socket == INVALID_SOCKET_VALUE)
+    int my_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (my_socket < 0)
     {
         printf("Errore nella creazione del socket\n");
         clearwinsock();
@@ -291,9 +290,6 @@ int main(int argc, char *argv[])
         struct sockaddr_in client_addr;
         socklen_t client_addr_len = sizeof(client_addr);
 
-        // Initialize buffer to zero to avoid reading uninitialized data
-        memset(recv_buffer, 0, sizeof(recv_buffer));
-
         int recv_len = recvfrom(my_socket, recv_buffer, sizeof(recv_buffer), 0,
                                 (struct sockaddr *)&client_addr, &client_addr_len);
 
@@ -308,23 +304,6 @@ int main(int argc, char *argv[])
         char client_ip[INET_ADDRSTRLEN];
         get_hostname_from_ip(&client_addr, client_hostname, sizeof(client_hostname),
                              client_ip, sizeof(client_ip));
-
-        // Check if received datagram has correct size
-        if (recv_len < REQUEST_BUFFER_SIZE)
-        {
-            printf("Datagramma ricevuto troppo corto (%d byte, attesi %d) da %s (ip %s)\n",
-                   recv_len, REQUEST_BUFFER_SIZE, client_hostname, client_ip);
-
-            struct response resp;
-            resp.status = STATUS_INVALID_REQUEST;
-            resp.type = '\0';
-            resp.value = 0.0f;
-
-            int send_len = serialize_response(&resp, send_buffer);
-            sendto(my_socket, send_buffer, send_len, 0,
-                   (struct sockaddr *)&client_addr, client_addr_len);
-            continue;
-        }
 
         struct request req;
         deserialize_request(recv_buffer, &req);
